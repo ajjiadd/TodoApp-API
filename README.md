@@ -33,4 +33,4 @@ To get started with **TodoApp-API**, follow these steps:
 ## Technologies Used
 - **Node.js:** JavaScript runtime environment.
 - **Express.js:** Web framework for Node.js .
-- **MongoDB (optional):** For storing tasks (can be implemented as needed).
+- **MongoDB:** Here I use mongoose.
