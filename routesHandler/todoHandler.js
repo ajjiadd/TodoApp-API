@@ -2,13 +2,26 @@ const express = require("express");
 const mongoose = require("mongoose");
 const router = express.Router();
 const todoSchema = require("../schemas/todoSchema");
+const userSchema = require("../schemas/userSchema");
 const Todo = new mongoose.model("Todo", todoSchema);
+const User = new mongoose.model("User", userSchema);
+const checkLogin = require("../middlewares/checkLogin");
 
 //GET ALL THE TODOS
-router.get("/", async (req, res)=>{
+router.get("/",checkLogin, async (req, res)=>{
     try{
+        /*
+        --This code use for showing limit data--
         const limit = parseInt(req.query.limit) || 5; //This line use for show limit data files
-        const resultGet = await Todo.find({status: "active"},"title status date -_id").limit(limit);
+        const resultGet = await Todo.find({},"title status date user -_id").limit(limit);
+        */
+       //this code use for showing all data in todo
+       const resultGet = await Todo.find({})
+       .populate("user", "name username -_id")  // Populate 'user' with specific fields (e.g., 'username')
+       .select("title status date user description -_id");  // Select the fields you want to return
+   
+
+
             res.status(200).json({
                 result: resultGet,
                 message: "success!",
@@ -49,17 +62,32 @@ router.get("/:id", async (req, res) => {
 
 
 //post a todo 
-router.post("/", async (req, res) => {
-    const newTodo = new Todo(req.body);
-    try {
-        await newTodo.save(); // Correct usage
+router.post("/", checkLogin, async (req, res)=>{
+    const newTodo = new Todo({
+       ...req.body,
+       user: req.userId,
+    });
+    try{
+        const todo = await newTodo.save();
+
+        await User.updateOne({
+            _id: req.userId
+        },{
+            $push: {
+                todos: todo._id
+            }
+        }
+    )
+
         res.status(200).json({
             message: "Todo was inserted successfully!",
         });
-    } catch (err) {
+        //console.log("User ID from token:", req.userId);
+    }catch(err){
+        console.log(err);
         res.status(500).json({
-            error: "There was a server side ERROR!",
-        });
+            error: "There was a server side Error!",
+        })
     }
 });
 
